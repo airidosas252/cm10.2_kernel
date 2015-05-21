@@ -5,6 +5,7 @@
  * Copyright (C) 2008 Google, Inc.
  * Copyright (c) 2009, 2012 Code Aurora Forum. All rights reserved.
  * Copyright (c) 2009, 2012, 2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009, 2012, 2013 Code Aurora Forum. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -47,6 +48,8 @@ struct audmgr_global {
 	struct msm_rpc_endpoint *ept;
 	struct task_struct *task;
 	uint32_t rpc_version;
+	uint32_t rx_device;
+	uint32_t tx_device;
 	int cad;
 	struct device_info_callback *device_cb[MAX_DEVICE_INFO_CALLBACK];
 
@@ -161,6 +164,8 @@ static void process_audmgr_callback(struct audmgr_global *amg,
 			wake_up(&am->wait);
 			break;
 		}
+		if (!amg->cad)
+			break;
 
 		if (am->evt.session_info == SESSION_PLAYBACK &&
 			am->evt.dev_type.rx_device != amg->rx_device) {
@@ -228,11 +233,13 @@ static void process_audmgr_callback(struct audmgr_global *amg,
 					be32_to_cpu(temp->d.rx_device);
 			am->evt.dev_type.tx_device = 0;
 			am->evt.acdb_id = am->evt.dev_type.rx_device;
+			amg->rx_device = am->evt.dev_type.rx_device;
 		} else if (am->evt.session_info == SESSION_RECORDING) {
 			am->evt.dev_type.rx_device = 0;
 			am->evt.dev_type.tx_device =
 					be32_to_cpu(temp->d.tx_device);
 			am->evt.acdb_id = am->evt.dev_type.tx_device;
+			amg->tx_device = am->evt.dev_type.tx_device;
 		}
 		am->evt.dev_type.ear_mute =
 					be32_to_cpu(temp->d.ear_mute);
