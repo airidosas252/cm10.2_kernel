@@ -4,6 +4,7 @@
  *
  * Copyright (C) 2008 Google, Inc.
  * Copyright (c) 2009, 2012 Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009, 2012, 2013 The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -156,6 +157,24 @@ static void process_audmgr_callback(struct audmgr_global *amg,
 			return;
 		if (am->state != STATE_ENABLED)
 			am->state = STATE_ENABLED;
+		if (!amg->cad) {
+			wake_up(&am->wait);
+			break;
+		}
+
+		if (am->evt.session_info == SESSION_PLAYBACK &&
+			am->evt.dev_type.rx_device != amg->rx_device) {
+			am->evt.dev_type.rx_device = amg->rx_device;
+			am->evt.dev_type.tx_device = 0;
+			am->evt.acdb_id = am->evt.dev_type.rx_device;
+		}
+		if (am->evt.session_info == SESSION_RECORDING &&
+			am->evt.dev_type.tx_device != amg->tx_device) {
+			am->evt.dev_type.rx_device = 0;
+			am->evt.dev_type.tx_device = amg->tx_device;
+			am->evt.acdb_id = am->evt.dev_type.tx_device;
+		}
+
 		while ((amg->device_cb[i] != NULL) &&
 				(i < MAX_DEVICE_INFO_CALLBACK) &&
 				(amg->cad)) {
